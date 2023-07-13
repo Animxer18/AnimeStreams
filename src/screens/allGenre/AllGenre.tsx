@@ -73,7 +73,7 @@ const getAnimes = useCallback((name: string) => {
     if (loading) {
 
         return (<View style={styles.container}>
-            <ActivityIndicator color={'limegreen'} size={'large'}/>
+            <ActivityIndicator color={COLORS.LIME} size={'large'}/>
             <Text style={styles.title}>Loading...</Text>
         </View>)
     }
@@ -87,7 +87,7 @@ const getAnimes = useCallback((name: string) => {
                         <TouchableOpacity onPress={() => { navigation.navigate('GenreList', { name: item.title }) }}>
                             <View style={{ flexDirection: "row", justifyContent: 'space-between', alignItems: 'center', marginRight: 16 }}>
                                 <Text style={styles.title}>{item.title}</Text>
-                                <Ionicons name='ios-arrow-forward-outline' size={20} color={'limegreen'} />
+                                <Ionicons name='ios-arrow-forward-outline' size={20} color={COLORS.LIME} />
                             </View>
                         </TouchableOpacity>
                         <FlatList

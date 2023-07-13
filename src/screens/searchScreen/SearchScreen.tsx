@@ -35,6 +35,9 @@ const SearchScreen = () => {
             console.log("ERROR:", err);
         })
     }
+    const navigateToScreen = (id: string)=>{
+        navigation.navigate('AnimeDetails', {id:id})
+    }
     return (
         <View style={{ backgroundColor: 'rgba(0,0,0,0.9)', flex: 1 }}>
             <HeaderComponent onBackPress={()=>navigation.goBack()}/>
@@ -46,7 +49,7 @@ const SearchScreen = () => {
                 }}
                 onEndReachedThreshold={0}
                 data={searchedAnimesList}
-                renderItem={({ item }) => (<ListItem {...item}/>)}
+                renderItem={({ item }) => (<ListItem {...item} onPress={navigateToScreen}/>)}
 
             />
         </View>

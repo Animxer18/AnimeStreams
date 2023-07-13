@@ -5,7 +5,9 @@ export const COLORS ={
     WHITE: '#FFFFFF',
     BLACK: '#000000',
     GREY:"#808080",
-    BACKGROUND:'rgba(0,0,0,0.9)'
+    BACKGROUND:'rgba(0,0,0,0.9)',
+    LIME: '#32CD32',
+    YELLOW:"#F4C430"
 }
 
 export const DEVICE_HEIGHT = Dimensions.get('window').height

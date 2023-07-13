@@ -1,25 +1,32 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View, TouchableWithoutFeedback, Animated, Text, Dimensions } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
-import { COLORS, DEVICE_HEIGHT as height, DEVICE_WIDTH as width } from '../config/common';
+import { COLORS, DEVICE_HEIGHT , DEVICE_WIDTH  } from '../config/common';
 
 const ANIMATED_PART_HEIGHT = 5;
-const TAB_BAR_WIDTH = width / 4;
 
 const TabBar = ({ state, descriptors, navigation }:any) => {
     
+    const [width, setWidth] = useState<number>(DEVICE_WIDTH)
+    const [height, setHeight] = useState<number>(DEVICE_HEIGHT)
     const animationHorizontalValue = useRef(new Animated.Value(0)).current;
     const focusedOptions = descriptors[state.routes[state.index].key].options;
-
+    
     const [tabBarHeight, setTabBarHeight] = useState<number>(60)
+    
     const animate = (index: number) => {
         Animated.spring(animationHorizontalValue, {
-            toValue: index * TAB_BAR_WIDTH,
+            toValue: index * (width / 4),
             useNativeDriver: true,
         }).start();
     };
     useEffect(() => {
         animate(state.index);
+
+        Dimensions.addEventListener('change', (dime)=>{
+            setWidth(dime.window.width)
+            setHeight(dime.window.height)
+        })
         
     }, [state.index]);
 
@@ -66,9 +73,9 @@ const TabBar = ({ state, descriptors, navigation }:any) => {
                             style={styles.tabButton}
                             key={`${index}--${route.key}`}
                         >
-                            <View style={styles.innerView}>
+                            <View style={{...styles.innerView, paddingVertical: height * 0.01,}}>
                                 <MaterialCommunityIcons name={icons} color={isFocused ? COLORS.WHITE : COLORS.GREY} size={18} style={{marginBottom: -2,}}/>
-                                <Text numberOfLines={1} style={[styles.iconText, { color: isFocused ? COLORS.WHITE : COLORS.GREY }]}>
+                                <Text numberOfLines={1} style={[styles.iconText, { color: isFocused ? COLORS.WHITE : COLORS.GREY, width: width / 4 }]}>
                                     {label}
                                 </Text>
                             </View>
@@ -77,7 +84,7 @@ const TabBar = ({ state, descriptors, navigation }:any) => {
                     );
                 })}
             </View>
-            <Animated.View style={{...styles.animatedWrapper, bottom: tabBarHeight/1.5,}}>
+            <Animated.View style={{...styles.animatedWrapper, bottom: tabBarHeight/1.5,width: width / 4}}>
                 <Animated.View
                     style={[
                         styles.animatedView,
@@ -103,12 +110,11 @@ const styles = StyleSheet.create({
         zIndex: 999999,
     },
     innerView: {
-        paddingVertical: height * 0.01,
+        
         justifyContent: 'center',
         alignItems: 'center',
     },
     iconText: {
-        width: TAB_BAR_WIDTH,
         textAlign: 'center',
         marginTop: 5
     },
@@ -124,7 +130,6 @@ const styles = StyleSheet.create({
         bottom: -10
     },
     animatedWrapper: {
-        width: TAB_BAR_WIDTH,
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: -9999,

@@ -1,65 +1,36 @@
-import { Pressable, ScrollView, StyleSheet, Text, View, TouchableOpacity, RefreshControl } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native'
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { GET } from '../../config/http-calls'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { HomeStackParams } from '../../navigation/AppNavigator'
+import { HomeStackParams, MangaStackParams } from '../../navigation/AppNavigator'
 import { Image } from 'react-native'
-import { AnimeDetailsTypes } from './types'
+import { MangaDetailsType } from './types'
 import SkeletonContent from 'react-native-skeleton-content-nonexpo';
 import Ionicons from 'react-native-vector-icons/Ionicons'
 import { COLORS } from '../../config/common'
-
-const AnimeDetails = () => {
-    const route = useRoute<RouteProp<HomeStackParams, 'AnimeDetails'>>()
-    const navigation = useNavigation<NativeStackNavigationProp<HomeStackParams, 'AnimeDetails'>>()
-    const [animeDetails, setAnimeDetails] = useState<AnimeDetailsTypes>()
+const MangaDetails = () => {
+    const route = useRoute<RouteProp<MangaStackParams, 'MangaDetails'>>()
+    const navigation = useNavigation<NativeStackNavigationProp<MangaStackParams, 'MangaDetails'>>()
+    const [mangaDetails, setMangaDetails] = useState<MangaDetailsType>()
     const [isLoading, setLoading] = useState<boolean>(false)
-    const [refreshing, setRefreshing] = useState<boolean>(false)
-
-    const getAnimeDetails = () => {
-        setLoading(true)
-        GET(`${route.params.provider === 'anilist' ? "/meta/anilist/info/" : "/anime/gogoanime/info/"}${route.params?.id}`).then((response: AnimeDetailsTypes) => {
-            console.log("response: ", response);
-            if (route.params.provider === 'anilist') {
-                const responseData = { ...response, title: response.title.romaji, otherName: response.title.native }
-                setAnimeDetails(responseData)
-            } else {
-
-                setAnimeDetails(response)
-            }
-            setLoading(false)
-            setRefreshing(false)
-        }).catch(err => {
-            console.log("ERROR", err);
-            setLoading(false)
-            setRefreshing(false)
-
-        })
-    }
 
     useEffect(() => {
-        console.log("route", route.params);
-        getAnimeDetails()
+        getMangaDetails()
     }, [])
-
-    const onRefresh = () => {
-        setRefreshing(true)
-        getAnimeDetails()
+    const getMangaDetails = () => {
+        setLoading(true)
+        GET(`/meta/anilist-manga/info/${route.params.id}`, {}, { provider: 'mangahere' }).then(response => {
+            console.log("MANGA details", response);
+            setMangaDetails(response)
+            setLoading(false)
+        }).catch(e => {
+            setLoading(false)
+            console.log("Error:=>", e);
+        })
     }
     return (
-        <ScrollView
-            refreshControl={
-                <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={onRefresh}
-                    colors={[COLORS.LIME]}
-                    progressBackgroundColor={COLORS.BLACK}
-                />
-            }
-
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: 15, backgroundColor: 'black' }}
-        >
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 15, backgroundColor: 'black' }}>
             <SkeletonContent
                 containerStyle={{ flex: 1 }}
                 isLoading={isLoading}
@@ -79,42 +50,42 @@ const AnimeDetails = () => {
             >
 
                 <View style={{ height: 320, width: '100%' }}>
-                    <Image source={{ uri: animeDetails?.cover ? animeDetails?.cover : animeDetails?.image }} style={{ height: 200, width: '100%' }} />
+                    <Image source={{ uri: mangaDetails?.cover ? mangaDetails?.cover : mangaDetails?.image }} style={{ height: 200, width: '100%' }} />
                     <View style={{ flexDirection: 'row', width: '100%' }}>
 
                         <View style={styles.verticalImgWrapper}>
-                            <Image source={{ uri: animeDetails?.image }} style={{ height: 170, width: '100%' }} resizeMode='cover' />
+                            <Image source={{ uri: mangaDetails?.image }} style={{ height: 170, width: '100%' }} resizeMode='cover' />
                         </View>
 
                         <View style={styles.titleView}>
                             <Text style={styles.title}>
-                                {animeDetails?.title}
+                                {mangaDetails?.title.english}
                             </Text>
                             <View style={{ flexDirection: 'row' }}>
 
                                 <View style={{ backgroundColor: 'grey', padding: 2, borderRadius: 5 }}>
                                     <Text style={{ color: 'white', fontSize: 12 }}>
-                                        {animeDetails?.releaseDate}
+                                        {mangaDetails?.releaseDate}
                                     </Text>
                                 </View>
                                 <View style={{ backgroundColor: 'green', marginLeft: 5, padding: 2, borderRadius: 5, justifyContent: 'center', alignItems: 'center' }}>
                                     <Text style={{ color: 'white', fontSize: 12 }}>
-                                        {animeDetails?.status}
+                                        {mangaDetails?.status}
                                     </Text>
                                 </View>
-                                <View style={{ backgroundColor: 'green', marginLeft: 5, padding: 2, borderRadius: 5, justifyContent: 'center', alignItems: 'center' }}>
+                                <View style={{ backgroundColor: COLORS.YELLOW, marginLeft: 5, padding: 2, borderRadius: 5, justifyContent: 'center', alignItems: 'center' }}>
                                     <Text style={{ color: 'white', fontSize: 12, textTransform: 'capitalize' }}>
-                                        {animeDetails?.subOrDub}
+                                        {mangaDetails?.type}
                                     </Text>
                                 </View>
                                 <View style={{ backgroundColor: 'grey', marginLeft: 5, paddingHorizontal: 5, borderRadius: 5, justifyContent: 'center', alignItems: 'center' }}>
                                     <Text style={{ color: 'white', fontSize: 12, textTransform: 'capitalize' }}>
-                                        {animeDetails?.totalEpisodes}
+                                        {mangaDetails?.chapters.length}
                                     </Text>
                                 </View>
                             </View>
-                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', width: '75%', paddingRight: 2 }}>
-                                <Text style={{ ...styles.subTitle, fontWeight: '700', color: 'green' }}>Genre: </Text><Text style={styles.subTitle}>{animeDetails?.genres?.join(', ')} </Text>
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', width: '80%', paddingRight: 2 }}>
+                                <Text style={{ ...styles.subTitle, fontWeight: '700', color: 'green' }}>Genre: </Text><Text style={styles.subTitle}>{mangaDetails?.genres?.join(', ')} </Text>
                             </View>
                         </View>
                     </View>
@@ -122,23 +93,39 @@ const AnimeDetails = () => {
                 <View style={styles.contentWrapper}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
                         <Text style={{ fontSize: 16, color: 'green', fontWeight: '700' }}>Japanese: </Text>
-                        <Text style={{ ...styles.subTitle, fontSize: 16, }}>{animeDetails?.otherName}</Text>
+                        <Text style={{ ...styles.subTitle, fontSize: 16, }}>{mangaDetails?.title.native}</Text>
                     </View>
                     <View style={{ marginVertical: 8 }}>
                         <Text style={styles.title}>Description</Text>
-                        <Text style={styles.subTitle}>{animeDetails?.description}</Text>
+                        <Text style={styles.subTitle}>{mangaDetails?.description}</Text>
                     </View>
-                    <Text style={styles.title}>Espisodes</Text>
+                    <Text style={styles.title}>Characters</Text>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ flexDirection: "row" }}>
+                        {mangaDetails?.characters?.map(item => {
+                            return <View style={styles.characterView}>
+                                <Image source={{ uri: item.image }} style={styles.image} />
+                                <Text style={styles.subTitle} numberOfLines={1}>{item.name.first}</Text>
+                            </View>
+                        })}
+                    </ScrollView>
+                    <Text style={styles.title}>Chapters</Text>
                     <View style={{ alignItems: 'center', width: '100%', }}>
 
                         <View style={styles.episodesWrapper}>
-                            {animeDetails?.episodes?.map(item => {
-                                return (<Pressable key={item.id} style={styles.episodeWrapper} onPress={() => { navigation.navigate('AnimeWatch', { ...item, animeDetails: animeDetails }) }}>
-                                    <Text style={styles.subTitle}>{item.number}</Text>
-                                </Pressable >)
+                            {mangaDetails?.chapters?.map(item => {
+                                return (
+                                    <Pressable key={item.id} style={styles.episodeWrapper} onPress={() => { }}>
+                                        <Text style={styles.subTitle}>{item.title?.split('.')[2]?.split('-')[0]}</Text>
+                                    </Pressable >)
                             })}
                         </View>
                     </View>
+                </View>
+                <View>
+
                 </View>
             </SkeletonContent>
 
@@ -152,7 +139,7 @@ const AnimeDetails = () => {
     )
 }
 
-export default AnimeDetails
+export default MangaDetails
 
 const styles = StyleSheet.create({
     contentContainer: {
@@ -212,5 +199,17 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    characterView: {
+        width: 75,
+        // justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden', 
+        marginVertical: 5
+    },
+    image: {
+        width: 65,
+        height: 65,
+        borderRadius: 50, marginBottom: 3
     }
 })

@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native'
+import { StyleSheet, View, RefreshControl } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import { HomeStackParams } from '../../navigation/AppNavigator'
@@ -16,6 +16,7 @@ const RecentAnimes = () => {
     const [page, setPage] = useState<number>(0)
     const [hasNextPage, setHasNextPage] = useState<boolean>(false)
     const [recentAnimeList, setRecentAnimeList] = useState<RecentAnimeList[]>([])
+    const [refreshing, setRefreshing] = useState<boolean>(false)
 
 
     useEffect(() => {
@@ -32,11 +33,22 @@ const RecentAnimes = () => {
                 } else {
                     const tempArr = [...recentAnimeList, ...response.results];
                     setRecentAnimeList(tempArr)
+
                 }
+                setRefreshing(false)
+
             }).catch(error => {
                 console.log("recent Anime Error", error);
+                setRefreshing(false)
 
             })
+    }
+    const navigateToScreen = (id: string) => {
+        navigation.navigate('AnimeDetails', { id:id })
+    }
+    const onRefresh = () =>{
+        setRefreshing(true)
+        getRecentReleasedAnimes(1)
     }
     return (
         <View style={{ backgroundColor: COLORS.BACKGROUND, flex: 1 }}>
@@ -45,12 +57,18 @@ const RecentAnimes = () => {
 
             <FlatGrid
                 itemDimension={170}
+                refreshControl={<RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    colors={[COLORS.LIME]}
+                    progressBackgroundColor={COLORS.BLACK}
+                />}
                 data={recentAnimeList}
                 onEndReached={() => {
-                    hasNextPage && setPage(page + 1)
+                    hasNextPage && setPage(prev=>prev + 1)
                 }}
-                onEndReachedThreshold={2}
-                renderItem={({ item }) => (<ListItem {...item} />)}
+                onEndReachedThreshold={0.75}
+                renderItem={({ item }) => (<ListItem {...item} onPress={navigateToScreen} />)}
 
             />
         </View>

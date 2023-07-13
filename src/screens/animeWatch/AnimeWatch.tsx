@@ -9,17 +9,22 @@ import { StatusBar } from 'react-native'
 import Orientation, { OrientationLocker, PORTRAIT, LANDSCAPE } from "react-native-orientation-locker";
 import { QualityType } from './types'
 import { COLORS } from '../../config/common'
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 
 const AnimeWatch = () => {
     const route = useRoute<RouteProp<HomeStackParams, 'AnimeWatch'>>()
     const navigation = useNavigation<NativeStackNavigationProp<HomeStackParams, 'AnimeWatch'>>()
     const videoPlayerRef = useRef()
     const [url, setUrl] = useState<string>()
+    const [error, setError] = useState<boolean>(false)
+    const [loading, setLoading] = useState<boolean>(false)
     const [qualityArray, setQualityArray] = useState<QualityType[]>([])
+    const [quality, setQuality] = useState<number>(1080)
     const getAnimeURL = () => {
+        setLoading(true)
         GET(`/anime/gogoanime/watch/${route.params?.id}`, {}, { server: "vidstreaming" }).then(response => {
             console.log("Response: ", response.sources[3].url);
-            setUrl(response.sources[0].url);
+            setUrl(response.sources[3].url);
             setQualityArray(
                 [
                     { key: 360, value: response.sources[0].url },
@@ -27,9 +32,12 @@ const AnimeWatch = () => {
                     { key: 720, value: response.sources[2].url },
                     { key: 1080, value: response.sources[3].url },
                 ])
+            setError(false)
+            setLoading(false)
         }).catch(error => {
             console.log("Error: ", error);
-
+            setError(true)
+            setLoading(false)
         })
     }
     useEffect(() => {
@@ -89,6 +97,8 @@ const AnimeWatch = () => {
         }
         return courseReal;
     };
+
+
     return (
         <View style={{ flex: 1, backgroundColor: 'black' }}>
             <OrientationLocker
@@ -97,8 +107,12 @@ const AnimeWatch = () => {
                 onDeviceChange={orientation => console.log('onDeviceChange', orientation)}
             />
 
-
-            {url ? <View style={{ backgroundColor: 'red', height: "100%" }}>
+            {error && (
+                <View style={styles.subContainer}>
+                    <MaterialIcons name='info-outline' color={COLORS.GREY} />
+                </View>
+            )}
+            {url && <View style={{ backgroundColor: 'red', height: "100%" }}>
                 <VideoPlayer
                     source={{ uri: url }}
                     navigator={navigation}
@@ -107,9 +121,8 @@ const AnimeWatch = () => {
                     onError={videoError}               // Callback when video cannot be loaded
                     style={styles.backgroundVideo}
                     resizeMode='cover'
-                
                     title={route.params?.animeDetails?.title}
-                    seekColor={'limegreen'}
+                    seekColor={COLORS.LIME}
                     automaticallyWaitsToMinimizeStalling={true}
                     rate={1}
                     preventsDisplaySleepDuringVideoPlayback={true}
@@ -118,30 +131,19 @@ const AnimeWatch = () => {
                     ignoreSilentSwitch={'ignore'}
                     disableFocus={false}
                     progressUpdateInterval={1000}
+                    onQualityChange={(q: number) => { setQuality(q) }}
                     videoSources={qualityArray}
+                    selectedVideoTrack={{
+                        type: "resolution",
+                        value: quality
+                    }}
                 />
 
-            </View> : <View style={{ justifyContent: 'center', alignItems: 'center', flex: 1 }}>
-                <ActivityIndicator color={COLORS.WHITE} size={22} />
             </View>}
-            {/* <Modal visible={qualitySelectorVisible} transparent={true} animationType='slide' style={{ justifyContent: 'center', alignItems: 'center' }}>
-                <StatusBar backgroundColor={"rgba(0,0,0,0.9)"} />
-                <View style={{ backgroundColor: "rgba(0,0,0,0.9)", flex: 1, width: 200, height: 250, alignSelf: 'center', justifyContent: 'flex-end' }} >
-                    {qualityArray?.map((item => {
-                        return (<TouchableHighlight onPress={() => {
-                            console.log("item", item);
-                            setUrl(item.value);
-                            setSelectedQuality(item)
-                            setQualitySelectorVisible(false)
-                        }}>
-                            <View style={{ justifyContent: 'center', alignItems: 'center', }}>
-                                <Text style={{ color: COLORS.WHITE, marginVertical: 10 }}>{item.key}p</Text>
-                            </View>
-                        </TouchableHighlight>)
-                    }))}
-                    <Text style={{ textAlign: 'center', marginVertical: 20, color: COLORS.WHITE }} onPress={() => { setQualitySelectorVisible(false) }}>Cancel</Text>
-                </View>
-            </Modal> */}
+            {loading && <View style={styles.subContainer}>
+                <ActivityIndicator color={COLORS.LIME} size={22} />
+                <Text>Loading...</Text>
+            </View>}
         </View>
     )
 }
@@ -156,51 +158,11 @@ const styles = StyleSheet.create({
     backgroundVideo: {
         height: 300,
         width: '100%'
+    },
+    subContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        flex: 1,
+        flexDirection: 'row'
     }
 })
-
-
-{/* <VlCPlayerView
-                url={"https://static.videezy.com/system/resources/previews/000/044/089/original/Line_Twirl_x264.mp4"}
-                title={route.params?.animeDetails?.title}
-                Volume={1}
-                isFull={true}
-                // initOptions={['--adaptive-logic=lowest']}
-
-
-                // paused={paused}
-                // showControls={true}
-                onBuffering={(e: any) => {
-                    console.log('buffering', e);
-                }}
-                showTitle={true}
-                showLeftButton={true}
-                showMiddleButton={true}
-                showRightButton={true}
-                showBack={true}
-                onLeftPress={() => { navigation.goBack() }}
-                onError={(e: any) => { console.log(e); navigation.goBack()}}
-                onPlaying={(e: any) => { console.log(e);navigation.goBack() }}
-                onEnded={(e: any) => { console.log(e);navigation.goBack()  }}
-            >
-
-                <VLCPlayer
-                    style={[styles.video, { height: calcVLCPlayerHeight(Dimensions.get('window').width, 16 / 10), marginTop: 30 }]}
-                    videoAspectRatio="16:9"
-                    // autoAspectRatio={true}
-
-                    source={{
-                        initType: 2,
-                        hwDecoderEnabled: 1,
-                        hwDecoderForced: 1,
-                        uri: url,
-
-                    }}
-
-                    Volume={1}
-                    onError={(e: any) => { console.log(e); }}
-                    onPlaying={(e: any) => { console.log(e); }}
-                // resizeMode="cover"
-                />
-                
-            </VlCPlayerView> */}

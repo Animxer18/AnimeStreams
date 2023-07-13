@@ -36,6 +36,9 @@ const TopAiring = () => {
 
             })
     }
+    const navigateToScreen = (id: string) => {
+        navigation.navigate('AnimeDetails', { id:id })
+    }
     return (
         <View style={{ backgroundColor: COLORS.BACKGROUND, flex: 1 }}>
             <HeaderComponent onBackPress={() => navigation.goBack()} title={'Top Airing'}/>
@@ -49,7 +52,7 @@ const TopAiring = () => {
                     hasNextPage && setPage(page + 1)
                 }}
                 onEndReachedThreshold={2}
-                renderItem={({ item }) => (<ListItem {...item}/>)}
+                renderItem={({ item }) => (<ListItem {...item} onPress={navigateToScreen}/>)}
 
             />
         </View>

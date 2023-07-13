@@ -11,8 +11,9 @@ const ListItem: FC<Props> = (item) => {
     return (
         <TouchableOpacity
             style={{ ...styles.listItemView, ...item.styles }}
-            onPress={() => {
-                navigation.navigate('AnimeDetails', { id: item.id })
+            onPress={() => { 
+                item.onPress(item.id)
+                // navigation.navigate('AnimeDetails', { id: item.id, provider: item.provider })
             }}
         >
             <View style={{ height: 230, overflow: 'hidden' }}>

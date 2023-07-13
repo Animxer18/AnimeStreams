@@ -6,8 +6,6 @@ export interface RecentAnimeType {
 }
 
 export interface RecentAnimeList {
-    episodeId: string
-    episodeNumber: number,
     id: string,
     image: string,
     title: string,

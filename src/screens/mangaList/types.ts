@@ -1,0 +1,17 @@
+export type MangaItemType = {
+    color?: string,
+    cover?: string,
+    description?: string,
+    genres?: string[],
+    id: string,
+    image: string,
+    malId?: number,
+    popularity?: number,
+    rating?: number,
+    releaseDate?: number,
+    status?: string,
+    title: { romaji: string, english: string, native: string, userPreferred?: string },
+    totalChapters?: number,
+    type?: string,
+    volumes?: number,
+}

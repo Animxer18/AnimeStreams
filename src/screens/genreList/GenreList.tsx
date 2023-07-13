@@ -36,6 +36,9 @@ const GenreList = () => {
 
             })
     }
+    const navigateToScreen = (id: string) => {
+        navigation.navigate('AnimeDetails', { id: id })
+    }
     return (
 
         <View style={styles.container}>
@@ -48,14 +51,13 @@ const GenreList = () => {
                 <FlatGrid
                     itemDimension={170}
                     data={animebyGenreList}
-                    style={{marginTop: -15}}
+                    style={{ marginTop: -15 }}
                     contentContainerStyle={{ marginBottom: -10, marginTop: -10 }}
                     onEndReached={() => {
                         setPage(page + 1)
                     }}
                     onEndReachedThreshold={2}
-                    renderItem={({ item }) => (<ListItem {...item} />)}
-
+                    renderItem={({ item }) => (<ListItem {...item} onPress={(id) => navigateToScreen(id)} />)}
                 />
             </View>
         </View>
@@ -70,7 +72,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.BACKGROUND
     },
     episodesWrapper: {
-        paddingHorizontal: 6, 
+        paddingHorizontal: 6,
         alignItems: 'center'
     },
 })

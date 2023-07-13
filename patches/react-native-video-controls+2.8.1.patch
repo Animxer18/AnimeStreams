@@ -1,0 +1,654 @@
+diff --git a/node_modules/react-native-video-controls/VideoPlayer.js b/node_modules/react-native-video-controls/VideoPlayer.js
+index 7d36b4b..3fae70e 100644
+--- a/node_modules/react-native-video-controls/VideoPlayer.js
++++ b/node_modules/react-native-video-controls/VideoPlayer.js
+@@ -1,4 +1,4 @@
+-import React, {Component} from 'react';
++import React, { Component } from 'react';
+ import Video from 'react-native-video';
+ import {
+   TouchableWithoutFeedback,
+@@ -12,14 +12,17 @@ import {
+   Image,
+   View,
+   Text,
++  Modal,
++  StatusBar,
++  Dimensions,
+ } from 'react-native';
+ import padStart from 'lodash/padStart';
+ 
+ export default class VideoPlayer extends Component {
+   static defaultProps = {
+     toggleResizeModeOnFullscreen: true,
+-    controlAnimationTiming: 500,
+-    doubleTapTime: 130,
++    controlAnimationTiming: 100,
++    doubleTapTime: 280,
+     playInBackground: false,
+     playWhenInactive: false,
+     resizeMode: 'contain',
+@@ -67,6 +70,12 @@ export default class VideoPlayer extends Component {
+       currentTime: 0,
+       error: false,
+       duration: 0,
++      qualitySelectorVisible: false,
++      selectedQuality: 1080,
++      sources: this.props?.source?.uri,
++      changingVideoResolution: false,
++      // videoSources:[]
++      lastTap: 0,
+     };
+ 
+     /**
+@@ -107,6 +116,9 @@ export default class VideoPlayer extends Component {
+       togglePlayPause: this._togglePlayPause.bind(this),
+       toggleControls: this._toggleControls.bind(this),
+       toggleTimer: this._toggleTimer.bind(this),
++      rewindVideo: this._rewindVideo.bind(this),
++      forwardVideo: this._forwardVideo.bind(this),
++      openQualityModal: this._openQualityModal.bind(this),
+     };
+ 
+     /**
+@@ -147,6 +159,9 @@ export default class VideoPlayer extends Component {
+         rotate: new Animated.Value(0),
+         MAX_VALUE: 360,
+       },
++      middleControls: {
++        zIndex: new Animated.Value(2),
++      }
+     };
+ 
+     /**
+@@ -159,7 +174,7 @@ export default class VideoPlayer extends Component {
+   }
+ 
+   componentDidUpdate = prevProps => {
+-    const {isFullscreen} = this.props;
++    const { isFullscreen } = this.props;
+ 
+     if (prevProps.isFullscreen !== isFullscreen) {
+       this.setState({
+@@ -202,7 +217,10 @@ export default class VideoPlayer extends Component {
+    */
+   _onLoad(data = {}) {
+     let state = this.state;
+-
++    if (state.changingVideoResolution) {
++      console.log('restorePreviousTime', state.currentTime);
++      this.seekTo(state.currentTime);
++    }
+     state.duration = data.duration;
+     state.loading = false;
+     this.setState(state);
+@@ -224,6 +242,11 @@ export default class VideoPlayer extends Component {
+    */
+   _onProgress(data = {}) {
+     let state = this.state;
++
++    if (state.changingVideoResolution && data.currentTime === 0) {
++      this.setState({ changingVideoResolution: false });
++      return;
++    }
+     if (!state.scrubbing) {
+       state.currentTime = data.currentTime;
+ 
+@@ -268,7 +291,7 @@ export default class VideoPlayer extends Component {
+    * Either close the video or go to a
+    * new page.
+    */
+-  _onEnd() {}
++  _onEnd() { }
+ 
+   /**
+    * Set the error state to true which then
+@@ -290,11 +313,16 @@ export default class VideoPlayer extends Component {
+    * One tap toggles controls and/or toggles pause,
+    * two toggles fullscreen mode.
+    */
+-  _onScreenTouch() {
++  _onScreenTouch(tapDir) {
+     if (this.player.tapActionTimeout) {
+       clearTimeout(this.player.tapActionTimeout);
+       this.player.tapActionTimeout = 0;
+-      this.methods.toggleFullscreen();
++      // this.methods.toggleFullscreen();
++      if(tapDir === 'left'){
++        this.methods.rewindVideo()
++      }else if(tapDir === 'right'){
++        this.methods.forwardVideo()
++      }
+       const state = this.state;
+       if (state.showControls) {
+         this.resetControlTimeout();
+@@ -378,6 +406,11 @@ export default class VideoPlayer extends Component {
+         duration: this.props.controlAnimationTiming,
+         useNativeDriver: false,
+       }),
++      Animated.timing(this.animations.middleControls.zIndex, {
++        toValue: 0,
++        useNativeDriver: false,
++        duration: this.props.controlAnimationTiming,
++      }),
+     ]).start();
+   }
+ 
+@@ -408,6 +441,11 @@ export default class VideoPlayer extends Component {
+         useNativeDriver: false,
+         duration: this.props.controlAnimationTiming,
+       }),
++      Animated.timing(this.animations.middleControls.zIndex, {
++        toValue: 2,
++        useNativeDriver: false,
++        duration: this.props.controlAnimationTiming,
++      }),
+     ]).start();
+   }
+ 
+@@ -512,7 +550,30 @@ export default class VideoPlayer extends Component {
+ 
+     this.setState(state);
+   }
++  /**
++   * Rewinds the video by 10 secs 
++   */
++  _rewindVideo() {
++    let state = this.state;
++    state.currentTime = state.currentTime - 10
++    this.seekTo(state.currentTime)
++  }
++
++  /**
++ * Forwards the video by 10 secs 
++ */
+ 
++  _forwardVideo() {
++    let state = this.state;
++    state.currentTime = state.currentTime + 10
++    this.seekTo(state.currentTime)
++  }
++  /**
++   * Opens the quality modal 
++   */
++  _openQualityModal() {
++    this.setState({ qualitySelectorVisible: true })
++  }
+   /**
+    * Toggle between showing time remaining or
+    * video duration in the timer control
+@@ -751,6 +812,7 @@ export default class VideoPlayer extends Component {
+     state.volumeOffset = position;
+     this.mounted = true;
+ 
++    console.log("PROPS in the video: ", this.props);
+     this.setState(state);
+   }
+ 
+@@ -990,13 +1052,13 @@ export default class VideoPlayer extends Component {
+     return (
+       <View style={styles.volume.container}>
+         <View
+-          style={[styles.volume.fill, {width: this.state.volumeFillWidth}]}
++          style={[styles.volume.fill, { width: this.state.volumeFillWidth }]}
+         />
+         <View
+-          style={[styles.volume.track, {width: this.state.volumeTrackWidth}]}
++          style={[styles.volume.track, { width: this.state.volumeTrackWidth }]}
+         />
+         <View
+-          style={[styles.volume.handle, {left: this.state.volumePosition}]}
++          style={[styles.volume.handle, { left: this.state.volumePosition }]}
+           {...this.player.volumePanResponder.panHandlers}>
+           <Image
+             style={styles.volume.icon}
+@@ -1022,6 +1084,85 @@ export default class VideoPlayer extends Component {
+     );
+   }
+ 
++  renderMiddleControls() {
++    const playPauseControl = this.props.disablePlayPause
++      ? this.renderNullControl()
++      : this.renderPlayPause();
++
++    const rewindControl = this.renderRewindControl()
++    const forwardControl = this.renderForwardControl()
++    return (
++      <Animated.View
++        style={[
++          styles.controls.middle,
++          {
++            opacity: this.animations.bottomControl.opacity,
++            zIndex: this.animations.middleControls.zIndex,
++          },
++        ]}>
++        <ImageBackground
++          source={require('./assets/img/bottom-vignette.png')}
++          // style={[styles.controls.column]}
++          imageStyle={[styles.controls.vignette]}>
++          <View style={[styles.controls.middleControls]}>
++            {/* <TouchableWithoutFeedback onPress={() => {
++              const time = new Date().getTime();
++              const delta = time - this.state.lastTap
++
++              if (delta < 250) {
++                this.methods.rewindVideo()
++              }
++              this.setState({ lastTap: time })
++            }}> */}
++              <View style={{
++                justifyContent: 'center',
++                alignItems: 'flex-start',
++                // backgroundColor: 'red',
++                // height: 220,
++                // marginTop:-2, 
++                width: Dimensions.get('window').width / 2,
++              }}>
++
++                {rewindControl}
++              </View>
++            {/* </TouchableWithoutFeedback> */}
++
++            {playPauseControl}
++           
++              <View style={{
++                justifyContent: 'center',
++                alignItems: 'flex-end',
++                // backgroundColor: 'red',
++                // height: 220,
++                width: Dimensions.get('window').width / 2,
++              }}>
++
++                {forwardControl}
++              </View>
++
++          </View>
++        </ImageBackground>
++      </Animated.View>
++    );
++  }
++
++  renderRewindControl() {
++    let source = require('./assets/img/rewind.png');
++    return this.renderControl(
++      <Image source={source} style={{ height: 35, width: 35 }} resizeMode='contain' />,
++      this.methods.rewindVideo,
++      styles.controls.rewind,
++    );
++  }
++
++  renderForwardControl() {
++    let source = require('./assets/img/forward.png');
++    return this.renderControl(
++      <Image source={source} style={{ height: 35, width: 35 }} resizeMode='contain' />,
++      this.methods.forwardVideo,
++      styles.controls.forward
++    );
++  }
+   /**
+    * Render bottom control group and wrap it in a holder
+    */
+@@ -1032,9 +1173,9 @@ export default class VideoPlayer extends Component {
+     const seekbarControl = this.props.disableSeekbar
+       ? this.renderNullControl()
+       : this.renderSeekbar();
+-    const playPauseControl = this.props.disablePlayPause
++    const qualitySelector = this.props.disableQualitySelector
+       ? this.renderNullControl()
+-      : this.renderPlayPause();
++      : this.renderQualitySelector();
+ 
+     return (
+       <Animated.View
+@@ -1049,11 +1190,15 @@ export default class VideoPlayer extends Component {
+           source={require('./assets/img/bottom-vignette.png')}
+           style={[styles.controls.column]}
+           imageStyle={[styles.controls.vignette]}>
++          {/* <View style={[styles.controls.middleControls]}>
++
++            {playPauseControl}
++          </View> */}
+           {seekbarControl}
+           <SafeAreaView
+             style={[styles.controls.row, styles.controls.bottomControlGroup]}>
+-            {playPauseControl}
+             {this.renderTitle()}
++            {qualitySelector}
+             {timerControl}
+           </SafeAreaView>
+         </ImageBackground>
+@@ -1088,12 +1233,12 @@ export default class VideoPlayer extends Component {
+           />
+         </View>
+         <View
+-          style={[styles.seekbar.handle, {left: this.state.seekerPosition}]}
++          style={[styles.seekbar.handle, { left: this.state.seekerPosition }]}
+           pointerEvents={'none'}>
+           <View
+             style={[
+               styles.seekbar.circle,
+-              {backgroundColor: this.props.seekColor || '#FFF'},
++              { backgroundColor: this.props.seekColor || '#FFF' },
+             ]}
+             pointerEvents={'none'}
+           />
+@@ -1111,7 +1256,7 @@ export default class VideoPlayer extends Component {
+         ? require('./assets/img/play.png')
+         : require('./assets/img/pause.png');
+     return this.renderControl(
+-      <Image source={source} />,
++      <Image source={source} style={{ height: 35, width: 40, marginLeft: 10 }} resizeMode='contain' />,
+       this.methods.togglePlayPause,
+       styles.controls.playPause,
+     );
+@@ -1136,6 +1281,16 @@ export default class VideoPlayer extends Component {
+     return null;
+   }
+ 
++  /**
++   * Render Quality Selector
++   */
++  renderQualitySelector() {
++    return this.renderControl(
++      <Text style={styles.controls.quality}>{this.state.selectedQuality}p</Text>,
++      this.methods.openQualityModal)
++  }
++
++
+   /**
+    * Show our timer.
+    */
+@@ -1191,13 +1346,30 @@ export default class VideoPlayer extends Component {
+     return null;
+   }
+ 
++  onResolutionChange(item) {
++    if (!this.state.loading) {
++      if (this.state.selectedQuality !== item.key) {
++        const currentTime = this.state.currentTime
++        this.props.onQualityChange(item.key)
++        this.setState({
++          qualitySelectorVisible: false,
++          selectedQuality: item.key,
++          sources: item.value,
++          changingVideoResolution: true
++        })
++      }
++    } else {
++      console.log("Will not change while loading");
++    }
++
++  }
+   /**
+    * Provide all of our options and render the whole component.
+    */
+   render() {
+     return (
+       <TouchableWithoutFeedback
+-        onPress={this.events.onScreenTouch}
++        // onPress={this.events.onScreenTouch}
+         style={[styles.player.container, this.styles.containerStyle]}>
+         <View style={[styles.player.container, this.styles.containerStyle]}>
+           <Video
+@@ -1215,16 +1387,104 @@ export default class VideoPlayer extends Component {
+             onEnd={this.events.onEnd}
+             onSeek={this.events.onSeek}
+             style={[styles.player.video, this.styles.videoStyle]}
+-            source={this.props.source}
++            source={{ uri: this.state.sources }}
++          // selectedVideoTrack={{
++          //   type: "resolution",
++          //   value: this.state.selectedQuality
++          // }}
+           />
+           {this.renderError()}
+           {this.renderLoader()}
++          {this.renderMiddleControls()}
+           {this.renderTopControls()}
+           {this.renderBottomControls()}
++          {this.renderQualitySelectorModal()}
++
++          <TouchableWithoutFeedback onPress={() => {
++            // const time = new Date().getTime();
++            // const delta = time - this.state.lastTap
++
++            // if (delta < 250) {
++            //   this.methods.rewindVideo()
++            // }
++            this._onScreenTouch("left")
++          }}>
++            <View style={{
++              justifyContent: 'center',
++              alignItems: 'center',
++              position: 'absolute',
++              left: 0,
++              top:0,
++              bottom: 0,
++              height: '100%', width: Dimensions.get('window').width / 2,
++            }}>
++
++            </View>
++
++          </TouchableWithoutFeedback>
++          <TouchableWithoutFeedback onPress={() => {
++            // const time = new Date().getTime();
++            // const delta = time - this.state.lastTap
++
++            // if (delta < 250) {
++            //   this.methods.forwardVideo('right')
++            // }
++            this._onScreenTouch("right")
++            // this.setState({ lastTap: time })
++          }}>
++            <View style={{
++              justifyContent: 'center',
++              alignItems: 'center',
++              position: 'absolute',
++              right: 0,
++              top:0,
++              bottom: 0,
++              height: '100%',
++              width: Dimensions.get('window').width / 2,
++            }}>
++
++            </View>
++
++          </TouchableWithoutFeedback>
+         </View>
++
+       </TouchableWithoutFeedback>
+     );
+   }
++
++  renderQualitySelectorModal() {
++    return (
++      <Modal visible={this.state.qualitySelectorVisible} transparent={true} animationType='slide'  >
++        <View style={styles.modal.container} >
++          <TouchableWithoutFeedback onPress={() => { this.setState({ qualitySelectorVisible: false }) }}>
++            <View style={styles.modal.wrapper}>
++
++              <View style={styles.modal.qualityTextwrapper}>
++
++                <Text style={styles.modal.qualityText} >Quality</Text>
++              </View>
++              {this.props?.videoSources?.map((item => {
++                return (
++                  <TouchableHighlight key={item.key} underlayColor={"rgba(255,255,255,0.3)"}
++                    onPress={() => { this.onResolutionChange(item) }}>
++                    <View style={styles.modal.textView}>
++                      <Text style={{ ...styles.modal.qualityText, fontWeight: this.state.selectedQuality === item.key ? '700' : '400' }}>{item.key}p</Text>
++                    </View>
++                  </TouchableHighlight>)
++              }))}
++              <TouchableHighlight
++                underlayColor={"rgba(255,255,255,0.3)"}
++                onPress={() => { this.setState({ qualitySelectorVisible: false }) }}>
++
++                <Text style={styles.modal.qualityText} >Cancel</Text>
++              </TouchableHighlight>
++            </View>
++
++          </TouchableWithoutFeedback>
++        </View>
++
++      </Modal>)
++  }
+ }
+ 
+ /**
+@@ -1279,6 +1539,10 @@ const styles = {
+       alignItems: 'center',
+       justifyContent: 'center',
+     },
++    icon: {
++      height: 35,
++      width: 35,
++    }
+   }),
+   controls: StyleSheet.create({
+     row: {
+@@ -1319,8 +1583,22 @@ const styles = {
+     },
+     bottom: {
+       alignItems: 'stretch',
+-      flex: 2,
++      // flex: 1,
+       justifyContent: 'flex-end',
++      zIndex: 1, 
++    },
++    middle: {
++      justifyContent: 'center',
++      alignItems: 'center',
++      position: 'absolute',
++      right: 8,
++      left: 0,
++      bottom: 1,
++      top: 0,
++      zIndex: 2,
++      marginVertical: '20%',
++      flex: 2
++
+     },
+     topControlGroup: {
+       alignSelf: 'stretch',
+@@ -1346,9 +1624,29 @@ const styles = {
+       flexDirection: 'row',
+     },
+     playPause: {
+-      position: 'relative',
+-      width: 80,
++      // position: 'relative',
++      height: 60,
++      width: 60,
++      zIndex: 0,
++      // backgroundColor: 'red',
++      alignItems: 'center',
++      justifyContent: 'center'
++    },
++    forward: {
++      width: 60,
++      zIndex: 0,
++      height: 45,
++      alignSelf: 'center',
++      // justifyContent: 'center',
++      // backgroundColor: 'yellow',
++    },
++    rewind: {
++      width: 60,
+       zIndex: 0,
++      height: 45,
++      marginRight: 12,
++      alignSelf: 'center',
++      // justifyContent: 'center',
+     },
+     title: {
+       alignItems: 'center',
+@@ -1368,6 +1666,21 @@ const styles = {
+       fontSize: 11,
+       textAlign: 'right',
+     },
++    middleControls: {
++      flexDirection: 'row',
++      position: 'absolute',
++      left: 0,
++      right: 0,
++      top: 0,
++      bottom: 0,
++      flex: 1,
++      // backgroundColor: 'grey',
++      justifyContent: 'center',
++      alignItems: 'center'
++    },
++    quality: {
++      color: 'white'
++    }
+   }),
+   volume: StyleSheet.create({
+     container: {
+@@ -1404,6 +1717,7 @@ const styles = {
+       height: 28,
+       marginLeft: 20,
+       marginRight: 20,
++      zIndex: 9999999
+     },
+     track: {
+       backgroundColor: '#333',
+@@ -1420,8 +1734,8 @@ const styles = {
+     handle: {
+       position: 'absolute',
+       marginLeft: -7,
+-      height: 28,
+-      width: 28,
++      height: 35,
++      width: 35,
+     },
+     circle: {
+       borderRadius: 12,
+@@ -1432,4 +1746,33 @@ const styles = {
+       width: 12,
+     },
+   }),
++  modal: StyleSheet.create({
++    container: {
++      justifyContent: 'flex-end',
++      // alignItems: 'center',
++      flex: 1
++    },
++    wrapper: {
++      backgroundColor: "rgba(0,0,0,0.7)",
++      width: 200,
++      height: 235,
++      alignSelf: 'center',
++      justifyContent: 'center',
++      padding: 10
++    },
++    textView: {
++      justifyContent: 'center',
++      alignItems: 'center',
++    },
++    qualityText: {
++      color: 'white',
++      marginVertical: 10,
++      textAlign: 'center',
++    },
++    qualityTextwrapper: {
++      borderBottomColor: 'white',
++      borderBottomWidth: 0.9
++    }
++
++  }),
+ };
+diff --git a/node_modules/react-native-video-controls/assets/img/forward.png b/node_modules/react-native-video-controls/assets/img/forward.png
+new file mode 100644
+index 0000000..a4540bb
+Binary files /dev/null and b/node_modules/react-native-video-controls/assets/img/forward.png differ
+diff --git a/node_modules/react-native-video-controls/assets/img/pause.png b/node_modules/react-native-video-controls/assets/img/pause.png
+index ac95b8f..65282b0 100644
+Binary files a/node_modules/react-native-video-controls/assets/img/pause.png and b/node_modules/react-native-video-controls/assets/img/pause.png differ
+diff --git a/node_modules/react-native-video-controls/assets/img/play.png b/node_modules/react-native-video-controls/assets/img/play.png
+index 02f623f..4737a84 100644
+Binary files a/node_modules/react-native-video-controls/assets/img/play.png and b/node_modules/react-native-video-controls/assets/img/play.png differ
+diff --git a/node_modules/react-native-video-controls/assets/img/rewind.png b/node_modules/react-native-video-controls/assets/img/rewind.png
+new file mode 100644
+index 0000000..e2ee81c
+Binary files /dev/null and b/node_modules/react-native-video-controls/assets/img/rewind.png differ

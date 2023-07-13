@@ -1,4 +1,4 @@
-import { FlatList, Image, ScrollView, StyleSheet, Text, View, TouchableOpacity, Pressable } from 'react-native'
+import { FlatList, Image, ScrollView, StyleSheet, Text, View, TouchableOpacity, Pressable,RefreshControl } from 'react-native'
 import React, { useEffect, useState, FC } from 'react'
 import { GET } from '../../config/http-calls'
 import { RecentAnimeList, SerachAnimeType } from './types'
@@ -17,32 +17,65 @@ import ListItem from '../../component/listItem/ListItem'
 const Home = () => {
     const [recentAnimeList, setRecentAnimeList] = useState<RecentAnimeList[]>([])
     const [topAiringList, setTopAiringList] = useState<RecentAnimeList[]>([])
+    const [trendingList, setTrendingList] = useState<RecentAnimeList[]>([])
     const [searchOpen, setSearchOpen] = useState<boolean>(false)
     const [search, setSearch] = useState<string>('')
     const [searchedAnimesList, setSearchedAnimesList] = useState<SerachAnimeType[]>([])
     const [loading, setLoading] = useState<boolean>(false)
+    const [refreshing, setRefreshing] = useState<boolean>(false)
     const navigation = useNavigation<NativeStackNavigationProp<HomeStackParams>>()
+
+
+    useEffect(() => {
+        getRecentAnimes()
+        getTopAireingAnimes()
+        getTrendingAnime()
+    }, [])
+
     const getRecentAnimes = () => {
         setLoading(true)
         GET('/anime/gogoanime/recent-episodes', {}, { page: 1, type: 1 })
             .then((response: any) => {
                 setRecentAnimeList(response?.results)
                 setLoading(false)
+                setRefreshing(false)
+
             }).catch(error => {
                 console.log("Anime List Error", error);
                 setLoading(false)
+                setRefreshing(false)
             })
     }
     const getTopAireingAnimes = () => {
         setLoading(true)
         GET('/anime/gogoanime/top-airing', {}, { page: 1, type: 1 })
             .then((response: any) => {
-                console.log("Anime List", response)
                 setTopAiringList(response?.results)
+                setLoading(false)
+                setRefreshing(false)
+            }).catch(error => {
+                console.log("Anime List Error", error);
+                setLoading(false)
+                setRefreshing(false)
+            })
+    }
+    const getTrendingAnime = () => {
+        setLoading(true)
+        GET('/meta/anilist/trending', {}, { page: 1, provider: "gogoanime", perPage: 20 })
+            .then((response: any) => {
+                console.log("Anime List", response)
+                const trendingArr = response.results.map((item: any) => {
+                    return { ...item, title: item.title.romaji ? item.title.romaji : item.title.userPreferred, provider: 'anilist' }
+                })
+                console.log("trendingArr", trendingArr);
+                setTrendingList(trendingArr)
+                setRefreshing(false)
+
                 setLoading(false)
             }).catch(error => {
                 console.log("Anime List Error", error);
                 setLoading(false)
+                setRefreshing(false)
             })
     }
 
@@ -57,13 +90,19 @@ const Home = () => {
 
         })
     }
-    useEffect(() => {
-        getRecentAnimes()
-        getTopAireingAnimes()
-    }, [])
 
     const navigateToSearchAnimeList = () => {
         navigation.navigate("SearchScreen", { search: search })
+    }
+    const navigateToScreen = (id: string, provider?: string) => {
+        navigation.navigate('AnimeDetails', { id: id, provider: provider })
+    }
+
+    const onRefresh = () =>{
+        setRefreshing(true)
+        getRecentAnimes()
+        getTopAireingAnimes()
+        getTrendingAnime()
     }
     return (
         <ScrollView
@@ -71,6 +110,14 @@ const Home = () => {
             keyboardShouldPersistTaps='handled'
             nestedScrollEnabled
             showsVerticalScrollIndicator={false}
+            refreshControl={
+                <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    colors={[COLORS.LIME]}
+                    progressBackgroundColor={COLORS.BLACK}
+                />
+            }
         >
             <HeaderComponent onSearchOpen={() => { setSearchOpen(prev => !prev) }} from="home" />
             {searchOpen ? (
@@ -106,7 +153,7 @@ const Home = () => {
                             })}
                             <View style={{ flexDirection: "row", justifyContent: 'center', alignItems: 'center' }}>
                                 <Text style={styles.seeAllText} onPress={navigateToSearchAnimeList}>{"View all results "}</Text>
-                                <Ionicons name='ios-arrow-forward-outline' size={18} color={'limegreen'} />
+                                <Ionicons name='ios-arrow-forward-outline' size={18} color={COLORS.LIME} />
                             </View>
                         </ScrollView>
                     </View> : null}
@@ -142,7 +189,7 @@ const Home = () => {
                         <View style={{ flexDirection: "row", justifyContent: 'space-between', alignItems: 'center', marginRight: 16 }}>
                             <Text style={styles.mainTitle}>Recent Episodes</Text>
 
-                            <Ionicons name='ios-arrow-forward-outline' size={22} color={'limegreen'} />
+                            <Ionicons name='ios-arrow-forward-outline' size={22} color={COLORS.LIME} />
                         </View>
                     </TouchableOpacity>
 
@@ -156,16 +203,37 @@ const Home = () => {
                         renderItem={({ item }) => {
                             return (
                                 <View style={{ marginLeft: 10 }}>
-                                    <ListItem {...item} />
+                                    <ListItem {...item} onPress={(id) => navigateToScreen(id)} />
                                 </View>
                             )
                         }}
                     />
                 </View>
+                <TouchableOpacity onPress={() => { navigation.navigate('TrendingAnimes') }}>
+                    <View style={{ flexDirection: "row", justifyContent: 'space-between', alignItems: 'center', marginRight: 16 }}>
+                        <Text style={styles.mainTitle}>Trending</Text>
+                        <Ionicons name='ios-arrow-forward-outline' size={22} color={COLORS.LIME} />
+                    </View>
+                </TouchableOpacity>
+                <FlatList
+                    horizontal={true}
+                    scrollEnabled={true}
+                    keyExtractor={item => item.id}
+                    data={trendingList}
+                    contentContainerStyle={{ paddingBottom: 5, marginLeft: 6, marginTop: 8 }}
+                    showsHorizontalScrollIndicator={false}
+                    renderItem={({ item }) => {
+                        return (
+                            <View style={{ marginLeft: 10 }}>
+                                <ListItem {...item} onPress={(id) => { navigateToScreen(id, 'anilist') }} />
+                            </View>
+                        )
+                    }}
+                />
                 <TouchableOpacity onPress={() => { navigation.navigate('TopAiring') }}>
                     <View style={{ flexDirection: "row", justifyContent: 'space-between', alignItems: 'center', marginRight: 16 }}>
                         <Text style={styles.mainTitle}>Top Airing</Text>
-                        <Ionicons name='ios-arrow-forward-outline' size={22} color={'limegreen'} />
+                        <Ionicons name='ios-arrow-forward-outline' size={22} color={COLORS.LIME} />
                     </View>
                 </TouchableOpacity>
                 <View style={styles.episodesWrapper}>
@@ -173,23 +241,22 @@ const Home = () => {
                     <FlatGrid
                         itemDimension={170}
                         data={topAiringList}
-                        style={{marginBottom: -8}}
+                        style={{ marginBottom: -8 }}
                         contentContainerStyle={{ marginBottom: -10 }}
-                        keyExtractor={item=>item.id}
-                        renderItem={({ item }) => (<ListItem {...item} />)}
-
+                        keyExtractor={item => item.id}
+                        renderItem={({ item }) => (<ListItem {...item} onPress={(id) => navigateToScreen(id)} />)}
                     />
                 </View>
                 <TouchableOpacity onPress={() => { navigation.navigate('AllGenre') }}>
                     <View style={{ flexDirection: "row", justifyContent: 'space-between', alignItems: 'center', marginRight: 16 }}>
                         <Text style={styles.mainTitle}>All Genre</Text>
-                        <Ionicons name='ios-arrow-forward-outline' size={22} color={'limegreen'} />
+                        <Ionicons name='ios-arrow-forward-outline' size={22} color={COLORS.LIME} />
                     </View>
                 </TouchableOpacity>
                 <View style={styles.genreView}>
                     {GenreList.map(item => {
-                        return <Pressable key={item} style={styles.itemView} onPress={()=>{
-                            navigation.navigate('GenreList', {name:item})
+                        return <Pressable key={item} style={styles.itemView} onPress={() => {
+                            navigation.navigate('GenreList', { name: item })
                         }}>
                             <Text style={styles.genreText}>{item}</Text>
                         </Pressable>
@@ -240,7 +307,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center'
     },
     seeAllText: {
-        color: 'limegreen',
+        color: COLORS.LIME,
         textAlign: 'center',
 
     },
@@ -261,6 +328,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginVertical: 8,
-        paddingHorizontal: 10, 
+        paddingHorizontal: 10,
     }
 })

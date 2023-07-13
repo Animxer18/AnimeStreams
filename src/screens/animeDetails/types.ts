@@ -14,8 +14,9 @@ export interface AnimeDetailsTypes  {
     releaseDate?: string;
     status?: string;
     subOrDub?: string;
-    title?: string
+    title?: any
     totalEpisodes?: number;
     type?: string
-    url?: string
+    url?: string,
+    cover?: string;
 }

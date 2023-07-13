@@ -16,6 +16,9 @@ import GenreList from '../screens/genreList/GenreList';
 import News from '../screens/news/News';
 import Manga from '../screens/manga/Manga';
 import AllGenre from '../screens/allGenre/AllGenre';
+import MangaList from '../screens/mangaList/MangaList';
+import MangaDetails from '../screens/mangaDetails/MangaDetails';
+import TrendingAnimes from '../screens/trendingAnimes/TrendingAnimes';
 
 export type RootTabParams = {
     Animes: undefined;
@@ -26,13 +29,14 @@ export type RootTabParams = {
 
 export type HomeStackParams = {
     AnimesScreen: undefined;
-    AnimeDetails: { id: string };
+    AnimeDetails: { id: string, provider?: string };
     AnimeWatch: AnimeWatchParam;
     SearchScreen: { search: string }
-    TopAiring:undefined;
+    TopAiring: undefined;
     RecentAnimes: undefined;
-    GenreList:{name?: string} | undefined
-    AllGenre: undefined
+    GenreList: { name?: string } | undefined
+    AllGenre: undefined;
+    TrendingAnimes: undefined
 };
 
 const AniStack = createNativeStackNavigator<HomeStackParams>();
@@ -48,43 +52,39 @@ const AnimeStack = () => {
             <AniStack.Screen name="RecentAnimes" component={RecentAnimes} />
             <AniStack.Screen name="GenreList" component={GenreList} />
             <AniStack.Screen name="AllGenre" component={AllGenre} />
+            <AniStack.Screen name="TrendingAnimes" component={TrendingAnimes} />
         </AniStack.Navigator>
     );
 };
 
-//   export type ExploreStackParams = {
-//     Explore: undefined;
-//     RestaurantScreen: {name: string};
-//   };
-//   const ExploreStack = createNativeStackNavigator<ExploreStackParams>();
-//   const ExploreStacks = () => {
-//     return (
-//       <ExploreStack.Navigator initialRouteName="Explore" screenOptions={{headerShown : false}}>
-//         <ExploreStack.Screen name="Explore" component={Explore} />
-//         <ExploreStack.Screen
-//           name="RestaurantScreen"
-//           component={RestaurantScreen}
-//           options={{
-//             animation: 'none'
-//           }}
-//         />
-//       </ExploreStack.Navigator>
-//     );
-//   };
+export type MangaStackParams = {
+    MangaScreen: undefined;
+    MangaList: { search: string }
+    MangaDetails:{ id: string, }
+};
+const MStack = createNativeStackNavigator<MangaStackParams>();
+const MangaStack = () => {
+    return (
+        <MStack.Navigator initialRouteName="MangaScreen" screenOptions={{ headerShown: false }}>
+            <MStack.Screen name="MangaScreen" component={Manga} />
+            <MStack.Screen name="MangaList" component={MangaList} />
+            <MStack.Screen name="MangaDetails" component={MangaDetails} />
+        </MStack.Navigator>
+    );
+};
 
 const Tab = createBottomTabNavigator<RootTabParams>();
 
- const tabs: TabType[] = [
+const tabs: TabType[] = [
     {
         name: "Animes",
         label: 'movie-open-play',
         component: AnimeStack,
     },
-
     {
         name: 'Manga',
         label: 'book',
-        component: Manga,
+        component: MangaStack,
     },
     {
         name: "News",
@@ -99,16 +99,16 @@ const Tab = createBottomTabNavigator<RootTabParams>();
 ];
 const RootStack = () => {
     return (
-        <Tab.Navigator screenOptions={{ headerShown: false, tabBarAllowFontScaling: true,  }} tabBar={(props) => <TabBar {...props} />}>
-            {tabs.map((_, index) => {
+        <Tab.Navigator screenOptions={{ headerShown: false, tabBarAllowFontScaling: true, }} tabBar={(props) => <TabBar {...props} />}>
+            {tabs.map((tabs, index) => {
                 return (
                     <Tab.Screen
                         key={index}
-                        name={_.name}
-                        component={_.component}
+                        name={tabs.name}
+                        component={tabs.component}
                         options={{
-                            tabBarLabel: _.name,
-                            title: _.label
+                            tabBarLabel: tabs.name,
+                            title: tabs.label
 
                         }}
                     />

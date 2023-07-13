@@ -2,6 +2,7 @@ import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native'
 import React, { FC } from 'react'
 import Ionicons from 'react-native-vector-icons/Ionicons'
 import { HeaderType } from './types'
+import { COLORS } from '../../config/common'
 const HeaderComponent: FC<HeaderType> = ({ from, onSearchOpen, onBackPress, title }) => {
     return (
         <View style={styles.container}>
@@ -19,7 +20,7 @@ const HeaderComponent: FC<HeaderType> = ({ from, onSearchOpen, onBackPress, titl
                 :
                 (<View style={styles.backArrow}>
                     <TouchableOpacity onPress={onBackPress}>
-                        <Ionicons name='ios-arrow-back' size={24} color={'limegreen'} />
+                        <Ionicons name='ios-arrow-back' size={24} color={COLORS.LIME} />
                     </TouchableOpacity>
                     <Text style={styles.mainTitle}>{title}</Text>
                 </View>)}
