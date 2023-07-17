@@ -1,5 +1,5 @@
 diff --git a/node_modules/react-native-video-controls/VideoPlayer.js b/node_modules/react-native-video-controls/VideoPlayer.js
-index 7d36b4b..3fae70e 100644
+index 7d36b4b..80fe3d6 100644
 --- a/node_modules/react-native-video-controls/VideoPlayer.js
 +++ b/node_modules/react-native-video-controls/VideoPlayer.js
 @@ -1,4 +1,4 @@
@@ -158,11 +158,11 @@ index 7d36b4b..3fae70e 100644
 +    state.currentTime = state.currentTime - 10
 +    this.seekTo(state.currentTime)
 +  }
-+
+ 
 +  /**
 + * Forwards the video by 10 secs 
 + */
- 
++
 +  _forwardVideo() {
 +    let state = this.state;
 +    state.currentTime = state.currentTime + 10
@@ -507,7 +507,15 @@ index 7d36b4b..3fae70e 100644
    }),
    controls: StyleSheet.create({
      row: {
-@@ -1319,8 +1583,22 @@ const styles = {
+@@ -1313,14 +1577,29 @@ const styles = {
+       justifyContent: 'center',
+     },
+     top: {
+-      flex: 1,
++      // flex: 1,
+       alignItems: 'stretch',
+       justifyContent: 'flex-start',
++      zIndex: 9, 
      },
      bottom: {
        alignItems: 'stretch',
@@ -531,7 +539,7 @@ index 7d36b4b..3fae70e 100644
      },
      topControlGroup: {
        alignSelf: 'stretch',
-@@ -1346,9 +1624,29 @@ const styles = {
+@@ -1346,9 +1625,29 @@ const styles = {
        flexDirection: 'row',
      },
      playPause: {
@@ -563,7 +571,7 @@ index 7d36b4b..3fae70e 100644
      },
      title: {
        alignItems: 'center',
-@@ -1368,6 +1666,21 @@ const styles = {
+@@ -1368,6 +1667,21 @@ const styles = {
        fontSize: 11,
        textAlign: 'right',
      },
@@ -585,7 +593,7 @@ index 7d36b4b..3fae70e 100644
    }),
    volume: StyleSheet.create({
      container: {
-@@ -1404,6 +1717,7 @@ const styles = {
+@@ -1404,6 +1718,7 @@ const styles = {
        height: 28,
        marginLeft: 20,
        marginRight: 20,
@@ -593,7 +601,7 @@ index 7d36b4b..3fae70e 100644
      },
      track: {
        backgroundColor: '#333',
-@@ -1420,8 +1734,8 @@ const styles = {
+@@ -1420,8 +1735,8 @@ const styles = {
      handle: {
        position: 'absolute',
        marginLeft: -7,
@@ -604,7 +612,7 @@ index 7d36b4b..3fae70e 100644
      },
      circle: {
        borderRadius: 12,
-@@ -1432,4 +1746,33 @@ const styles = {
+@@ -1432,4 +1747,33 @@ const styles = {
        width: 12,
      },
    }),

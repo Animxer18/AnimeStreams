@@ -23,7 +23,8 @@ export type ChaptersType = {
 
 export type MangaDetailsType = {
     id: string,
-    title: { romaji: string, english: string, native: string, userPreferred?: string },
+    title: string,
+    altTitles?:string[] // { romaji: string, english: string, native: string, userPreferred?: string },
     image?: string,
     popularity?: number,
     color?: string,

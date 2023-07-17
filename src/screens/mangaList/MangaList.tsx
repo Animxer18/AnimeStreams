@@ -22,7 +22,8 @@ const MangaList = () => {
     }, [page])
 
     const getMangaList = (page: number) => {
-        GET(`/meta/anilist-manga/${route.params?.search}`, {}, { page: page }).then(res => {
+        // GET(`/meta/anilist-manga/${route.params?.search}`, {}, { page: page }).then(res => {
+        GET(`/manga/mangakakalot/${route.params?.search}`, {}, { page: page }).then(res => {
             console.log("res", res);
             // setHasNextPage(res.hasNextPage)
             if (page === 0) {
@@ -53,7 +54,7 @@ const MangaList = () => {
                 //     hasNextPage && setPage(page + 1)
                 // }}
                 // onEndReachedThreshold={2}
-                renderItem={({ item }) => (<ListItem {...item} title={item.title.romaji} onPress={navigateToScreen} />)}
+                renderItem={({ item }) => (<ListItem {...item} title={item.title} onPress={navigateToScreen} />)}
 
             />
         </View>

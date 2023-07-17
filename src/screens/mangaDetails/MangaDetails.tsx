@@ -20,8 +20,7 @@ const MangaDetails = () => {
     }, [])
     const getMangaDetails = () => {
         setLoading(true)
-        GET(`/meta/anilist-manga/info/${route.params.id}`, {}, { provider: 'mangahere' }).then(response => {
-            console.log("MANGA details", response);
+        GET(`/manga/mangakakalot/info?id=${route.params.id}`, {}, { provider: 'mangahere' }).then(response => {
             setMangaDetails(response)
             setLoading(false)
         }).catch(e => {
@@ -59,7 +58,7 @@ const MangaDetails = () => {
 
                         <View style={styles.titleView}>
                             <Text style={styles.title}>
-                                {mangaDetails?.title.english}
+                                {mangaDetails?.title}
                             </Text>
                             <View style={{ flexDirection: 'row' }}>
 
@@ -73,11 +72,11 @@ const MangaDetails = () => {
                                         {mangaDetails?.status}
                                     </Text>
                                 </View>
-                                <View style={{ backgroundColor: COLORS.YELLOW, marginLeft: 5, padding: 2, borderRadius: 5, justifyContent: 'center', alignItems: 'center' }}>
+                                {/* <View style={{ backgroundColor: COLORS.YELLOW, marginLeft: 5, padding: 2, borderRadius: 5, justifyContent: 'center', alignItems: 'center' }}>
                                     <Text style={{ color: 'white', fontSize: 12, textTransform: 'capitalize' }}>
                                         {mangaDetails?.type}
                                     </Text>
-                                </View>
+                                </View> */}
                                 <View style={{ backgroundColor: 'grey', marginLeft: 5, paddingHorizontal: 5, borderRadius: 5, justifyContent: 'center', alignItems: 'center' }}>
                                     <Text style={{ color: 'white', fontSize: 12, textTransform: 'capitalize' }}>
                                         {mangaDetails?.chapters.length}
@@ -93,7 +92,7 @@ const MangaDetails = () => {
                 <View style={styles.contentWrapper}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
                         <Text style={{ fontSize: 16, color: 'green', fontWeight: '700' }}>Japanese: </Text>
-                        <Text style={{ ...styles.subTitle, fontSize: 16, }}>{mangaDetails?.title.native}</Text>
+                        <Text style={{ ...styles.subTitle, fontSize: 16, }}>{mangaDetails?.altTitles[0]}</Text>
                     </View>
                     <View style={{ marginVertical: 8 }}>
                         <Text style={styles.title}>Description</Text>
@@ -117,8 +116,8 @@ const MangaDetails = () => {
                         <View style={styles.episodesWrapper}>
                             {mangaDetails?.chapters?.map(item => {
                                 return (
-                                    <Pressable key={item.id} style={styles.episodeWrapper} onPress={() => { }}>
-                                        <Text style={styles.subTitle}>{item.title?.split('.')[2]?.split('-')[0]}</Text>
+                                    <Pressable key={item.id} style={styles.episodeWrapper} onPress={() => { navigation.navigate('MangaRead', {id:item.id, title: item.title})}}>
+                                        <Text style={styles.subTitle}>{item.title}</Text>
                                     </Pressable >)
                             })}
                         </View>
@@ -174,20 +173,20 @@ const styles = StyleSheet.create({
         color: 'white',
     },
     episodeWrapper: {
-        backgroundColor: 'grey',
-        height: 30,
-        width: 50,
+        // backgroundColor: 'grey',
+        // height: 30,
+        // width: 50,
         justifyContent: 'center',
-        alignItems: 'center',
+        // alignItems: 'center',
         marginLeft: 10,
         marginVertical: 5
     },
     episodesWrapper: {
         flex: 1,
         width: '100%',
-        flexWrap: 'wrap',
-        flexDirection: 'row',
-        marginLeft: -10
+        // flexWrap: 'wrap',
+        // flexDirection: 'row',
+        // marginLeft: -10
     },
     backButton: {
         position: 'absolute',

@@ -10,7 +10,7 @@ export type MangaItemType = {
     rating?: number,
     releaseDate?: number,
     status?: string,
-    title: { romaji: string, english: string, native: string, userPreferred?: string },
+    title:  string, // { romaji: string, english: string, native: string, userPreferred?: string } ,
     totalChapters?: number,
     type?: string,
     volumes?: number,

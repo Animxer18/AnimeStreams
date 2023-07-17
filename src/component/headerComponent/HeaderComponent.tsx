@@ -22,7 +22,7 @@ const HeaderComponent: FC<HeaderType> = ({ from, onSearchOpen, onBackPress, titl
                     <TouchableOpacity onPress={onBackPress}>
                         <Ionicons name='ios-arrow-back' size={24} color={COLORS.LIME} />
                     </TouchableOpacity>
-                    <Text style={styles.mainTitle}>{title}</Text>
+                    <Text style={styles.mainTitle} numberOfLines={1}>{title}</Text>
                 </View>)}
         </View>
     )

@@ -19,6 +19,7 @@ import AllGenre from '../screens/allGenre/AllGenre';
 import MangaList from '../screens/mangaList/MangaList';
 import MangaDetails from '../screens/mangaDetails/MangaDetails';
 import TrendingAnimes from '../screens/trendingAnimes/TrendingAnimes';
+import MangaRead from '../screens/mangaRead/MangaRead';
 
 export type RootTabParams = {
     Animes: undefined;
@@ -61,6 +62,7 @@ export type MangaStackParams = {
     MangaScreen: undefined;
     MangaList: { search: string }
     MangaDetails:{ id: string, }
+    MangaRead: { id: string,title:string}
 };
 const MStack = createNativeStackNavigator<MangaStackParams>();
 const MangaStack = () => {
@@ -69,6 +71,7 @@ const MangaStack = () => {
             <MStack.Screen name="MangaScreen" component={Manga} />
             <MStack.Screen name="MangaList" component={MangaList} />
             <MStack.Screen name="MangaDetails" component={MangaDetails} />
+            <MStack.Screen name="MangaRead" component={MangaRead} />
         </MStack.Navigator>
     );
 };
